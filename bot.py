@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.enums import ChatType
+from aiogram.filters import CommandStart
 
 TOKEN = "8617801757:AAHg2OAGh0Rh8aefbPmQxeKML0tUWTJRsrY"
 GROUP_ID = -1004394157854
@@ -10,6 +11,13 @@ GROUP_ID = -1004394157854
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
+# Приветствие на /start
+@dp.message(CommandStart())
+async def start_handler(message: types.Message):
+    if message.chat.type == ChatType.PRIVATE:
+        await message.answer("👋 Привет! Отправь сюда сообщение или анкету, и администраторы тебе ответят.")
+
+# Обработка остальных сообщений
 @dp.message()
 async def handle_messages(message: types.Message):
     try:
