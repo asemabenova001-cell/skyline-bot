@@ -4,7 +4,7 @@ from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.enums import ChatType
 
-TOKEN = "8617801757:AAHg2OAGh0Rh8aefbPmQxeKM"
+TOKEN = "8617801757:AAHg2OAGh0Rh8aefbPmQxeKML0tUWTJRsrY"
 GROUP_ID = -1004394157854
 
 bot = Bot(token=TOKEN)
