@@ -11,16 +11,28 @@ GROUP_ID = -1004394157854
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# Приветствие на /start
+# Обработчик команды /start
 @dp.message(CommandStart())
 async def start_handler(message: types.Message):
     if message.chat.type == ChatType.PRIVATE:
-        await message.answer("👋 Привет! Отправь сюда сообщение или анкету, и администраторы тебе ответят.")
+        welcome_text = (
+            "Добро пожаловать в <b>𝐒𝐤𝐲𝐥𝐢𝐧𝐞 𝐀𝐳𝐮𝐫𝐞 𖤓</b>\n"
+            "──────────\n"
+            "Чтобы вступить во флуд, заполните анкету и подпишитесь на каналы.\n"
+            "Анкету можете найти в Инфо ➟ навигация ➟ вступление.\n"
+            "Анкету отправляете боту.\n"
+            "──────────\n"
+            "нᴀɯи ᴋᴀнᴀᴧы\n\n"
+            "@SkylineAzure_INFO - инɸо ᴋᴀнᴀᴧ ɸᴧудᴀ\n"
+            "@SkylineAzure_LIFE - ᴧᴀйɸ ᴋᴀнᴀᴧ ɸᴧудᴀ"
+        )
+        await message.answer(welcome_text, parse_mode="HTML")
 
-# Обработка остальных сообщений
+# Обработчик сообщений пользователей и ответов админов
 @dp.message()
 async def handle_messages(message: types.Message):
     try:
+        # ЛС с пользователем -> отправка в группу админов
         if message.chat.type == ChatType.PRIVATE:
             user = message.from_user
             username = f" (@{user.username})" if user.username else ""
@@ -32,6 +44,7 @@ async def handle_messages(message: types.Message):
             await bot.send_message(chat_id=GROUP_ID, text=text, parse_mode="HTML")
             await message.reply("Спасибо! Ваше сообщение отправлено администраторам.")
 
+        # Ответ админа в группе (через Reply) -> отправка пользователю
         elif message.chat.id == GROUP_ID and message.reply_to_message:
             reply_text = message.reply_to_message.text or ""
             if "ID:" in reply_text:
