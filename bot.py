@@ -16,14 +16,12 @@ dp = Dispatcher()
 async def start_handler(message: types.Message):
     if message.chat.type == ChatType.PRIVATE:
         welcome_text = (
-            "Добро пожаловать в <b>𝐒𝐤𝐲𝐥𝐢𝐧𝐞 𝐀𝐳𝐮𝐫𝐞 𖤓</b>\n"
-            "──────────\n"
-            "Чтобы вступить во флуд, заполните анкету и подпишитесь на каналы.\n"
+            "      Чтобы вступить во флуд, заполните анкету и подпишитесь на каналы.\n"
             "Анкету можете найти в Инфо ➟ навигация ➟ вступление.\n"
             "Анкету отправляете боту.\n"
-            "──────────\n"
-            "нᴀɯи ᴋᴀнᴀᴧы\n\n"
-            "@SkylineAzure_INFO - инɸо ᴋᴀнᴀᴧ ɸᴧудᴀ\n"
+            "    ──────────\n"
+            "        нᴀɯи ᴋᴀнᴀᴧы\n\n"
+            "@SkylineAzure_INFO - инɸо ᴋᴀнᴀᴧ ɸᴧудᴀ\n\n"
             "@SkylineAzure_LIFE - ᴧᴀйɸ ᴋᴀнᴀᴧ ɸᴧудᴀ"
         )
         await message.answer(welcome_text, parse_mode="HTML")
