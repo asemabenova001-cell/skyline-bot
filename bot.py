@@ -11,7 +11,7 @@ GROUP_ID = -1004394157854
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# 1. СНАЧАЛА ОБРАБОТЧИК /start
+# 1. ОБРАБОТЧИК /start (выполняется первым)
 @dp.message(CommandStart())
 async def start_handler(message: types.Message):
     if message.chat.type == ChatType.PRIVATE:
@@ -26,12 +26,12 @@ async def start_handler(message: types.Message):
         )
         await message.answer(welcome_text, parse_mode="HTML")
 
-# 2. ТОЛЬКО ПОТОМ ОБРАБОТЧИК ВСЕХ ОСТАЛЬНЫХ СООБЩЕНИЙ
+# 2. ОБРАБОТЧИК ВСЕХ ОСТАЛЬНЫХ СООБЩЕНИЙ
 @dp.message()
 async def handle_messages(message: types.Message):
     try:
-        # Пропускаем /start, если он вдруг сюда долетит
-        if message.text and message.text.startswith("/start"):
+        # Если пришла команда /start — игнорируем тут, ее обработал start_handler
+        if message.text and message.text.strip().startswith("/start"):
             return
 
         # ЛС с пользователем -> отправка в группу админов
