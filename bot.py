@@ -3,7 +3,6 @@ import logging
 from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.enums import ChatType
-from aiogram.filters import CommandStart
 
 TOKEN = "8617801757:AAHg2OAGh0Rh8aefbPmQxeKML0tUWTJRsrY"
 GROUP_ID = -1004394157854
@@ -11,31 +10,29 @@ GROUP_ID = -1004394157854
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# 1. ОБРАБОТЧИК /start (выполняется первым)
-@dp.message(CommandStart())
-async def start_handler(message: types.Message):
-    if message.chat.type == ChatType.PRIVATE:
-        welcome_text = (
-            "      Чтобы вступить во флуд, заполните анкету и подпишитесь на каналы.\n"
-            "Анкету можете найти в Инфо ➟ навигация ➟ вступление.\n"
-            "Анкету отправляете боту.\n"
-            "    ──────────\n"
-            "        нᴀɯи ᴋᴀнᴀᴧы\n\n"
-            "@SkylineAzure_INFO - инɸо ᴋᴀнᴀᴧ ɸᴧудᴀ\n\n"
-            "@SkylineAzure_LIFE - ᴧᴀйɸ ᴋᴀнᴀᴧ ɸᴧудᴀ"
-        )
-        await message.answer(welcome_text, parse_mode="HTML")
-
-# 2. ОБРАБОТЧИК ВСЕХ ОСТАЛЬНЫХ СООБЩЕНИЙ
+# Единый обработчик сообщений
 @dp.message()
 async def handle_messages(message: types.Message):
     try:
-        # Если пришла команда /start — игнорируем тут, ее обработал start_handler
-        if message.text and message.text.strip().startswith("/start"):
-            return
-
-        # ЛС с пользователем -> отправка в группу админов
+        # Проверяем, отправлено ли сообщение в ЛС боту
         if message.chat.type == ChatType.PRIVATE:
+            msg_text = (message.text or "").strip()
+
+            # ВСЕГДА при наличии /start отправляем приветствие
+            if "/start" in msg_text:
+                welcome_text = (
+                    "      Чтобы вступить во флуд, заполните анкету и подпишитесь на каналы.\n"
+                    "Анкету можете найти в Инфо ➟ навигация ➟ вступление.\n"
+                    "Анкету отправляете боту.\n"
+                    "    ──────────\n"
+                    "        нᴀɯи ᴋᴀнᴀᴧы\n\n"
+                    "@SkylineAzure_INFO - инɸо ᴋᴀнᴀᴧ ɸᴧудᴀ\n\n"
+                    "@SkylineAzure_LIFE - ᴧᴀйɸ ᴋᴀнᴀᴧ ɸᴧудᴀ"
+                )
+                await message.answer(welcome_text, parse_mode="HTML")
+                return
+
+            # Для всех остальных обычных сообщений в ЛС — пересылаем админам
             user = message.from_user
             username = f" (@{user.username})" if user.username else ""
             text = f"📩 <b>Сообщение от пользователя:</b>\n" \
