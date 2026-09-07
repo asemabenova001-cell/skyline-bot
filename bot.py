@@ -6,14 +6,17 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.enums import ChatType
 from aiogram.filters import Command
 
-# Токен подтягивается из переменных окружения Render
+# Получаем токен из переменной окружения Render
 TOKEN = os.getenv("BOT_TOKEN")
+
+if not TOKEN:
+    raise ValueError("Ошибка: Переменная BOT_TOKEN не найдена в Environment Variables!")
+
 GROUP_ID = -1004394157854
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# Текст приветствия
 WELCOME_TEXT = (
     "      Чтобы вступить во флуд, заполните анкету и подпишитесь на каналы.\n"
     "Анкету можете найти в Инфо ➟ навигация ➟ вступление.\n"
@@ -24,7 +27,7 @@ WELCOME_TEXT = (
     "@SkylineAzure_LIFE - ᴧᴀйɸ ᴋᴀнᴀᴧ ɸᴧудᴀ"
 )
 
-# 1. ОБРАБОТЧИК КОМАНДЫ /start
+# 1. ОБРАБОТЧИК COMMAND /START
 @dp.message(Command("start"))
 async def start_cmd(message: types.Message):
     if message.chat.type == ChatType.PRIVATE:
@@ -34,11 +37,9 @@ async def start_cmd(message: types.Message):
 @dp.message()
 async def handle_messages(message: types.Message):
     try:
-        # Пропускаем команду /start, если она попала сюда
         if message.text and message.text.strip().startswith("/start"):
             return
 
-        # Если это личное сообщение боту
         if message.chat.type == ChatType.PRIVATE:
             user = message.from_user
             username = f" (@{user.username})" if user.username else ""
@@ -52,7 +53,6 @@ async def handle_messages(message: types.Message):
             await bot.send_message(chat_id=GROUP_ID, text=text, parse_mode="HTML")
             await message.reply("Спасибо! Ваше сообщение отправлено администраторам.")
 
-        # Если админ отвечает в группе (через Reply)
         elif message.chat.id == GROUP_ID and message.reply_to_message:
             reply_text = message.reply_to_message.text or ""
             if "ID:" in reply_text:
