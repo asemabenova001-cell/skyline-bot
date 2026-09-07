@@ -1,11 +1,13 @@
 import asyncio
 import logging
+import os
 from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.enums import ChatType
 from aiogram.filters import Command
 
-TOKEN = "8617801757:AAHg2OAGh0Rh8aefbPmQxeKML0tUWTJRsrY"
+# Токен подтягивается из переменных окружения Render
+TOKEN = os.getenv("BOT_TOKEN")
 GROUP_ID = -1004394157854
 
 bot = Bot(token=TOKEN)
