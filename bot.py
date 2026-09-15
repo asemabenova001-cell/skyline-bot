@@ -33,7 +33,7 @@ async def start_cmd(message: types.Message):
     if message.chat.type == ChatType.PRIVATE:
         await message.answer(WELCOME_TEXT, parse_mode="HTML")
 
-# 2. ОБРАБОТЧИК ВСЕХ СООБЩЕНИЙ
+# 2. ОБРАБОТЧИК ВСЕХ ОСТАЛЬНЫХ СООБЩЕНИЙ
 @dp.message()
 async def handle_messages(message: types.Message):
     try:
@@ -45,7 +45,19 @@ async def handle_messages(message: types.Message):
             user = message.from_user
             username = f" (@{user.username})" if user.username else ""
 
-            # 1. Текстовые сообщения отправляем ЕДИНЫМ постом
+            # 1. БЛОКИРОВКА СТИКЕРОВ
+            if message.sticker:
+                await message.reply("Пожалуйста, не отправляйте стикеры — бот их не обрабатывает.")
+                return
+
+            # 2. БЛОКИРОВКА ПРЕМИУМ-ЭМОДЗИ В ТЕКСТЕ
+            entities = message.entities or message.caption_entities or []
+            for entity in entities:
+                if entity.type == "custom_emoji" or getattr(entity, "custom_emoji_id", None):
+                    await message.reply("Пожалуйста, не отправляйте премиум-эмодзи — бот их не обрабатывает.")
+                    return
+
+            # 3. ОТПРАВКА ОБЫЧНОГО ТЕКСТА (одним блоком)
             if message.text:
                 full_post = (
                     f"📩 <b>Сообщение от пользователя:</b>\n"
@@ -56,11 +68,11 @@ async def handle_messages(message: types.Message):
                 )
                 await bot.send_message(chat_id=GROUP_ID, text=full_post[:4000], parse_mode="HTML")
 
-            # 2. Медиа и стикеры
+            # 4. ОТПРАВКА ОБЫЧНЫХ МЕДИА (фото, видео, гиф)
             else:
                 caption_text = message.caption or ""
                 header_info = (
-                    f"📩 <b>Медиа/Стикер от пользователя:</b>\n"
+                    f"📩 <b>Медиа от пользователя:</b>\n"
                     f"<b>Имя:</b> {html.escape(user.full_name)}{username}\n"
                     f"<b>ID:</b> <code>{user.id}</code>"
                 )
@@ -70,7 +82,7 @@ async def handle_messages(message: types.Message):
                 await bot.send_message(chat_id=GROUP_ID, text=header_info, parse_mode="HTML")
                 await message.copy_to(chat_id=GROUP_ID)
 
-            # Подтверждение пользователю
+            # Ответ пользователю
             await message.reply("Спасибо! Ваше сообщение отправлено администраторам.")
 
         # Если админ отвечает в группе (через Reply)
