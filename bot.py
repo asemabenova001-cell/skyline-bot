@@ -33,7 +33,7 @@ async def start_cmd(message: types.Message):
     if message.chat.type == ChatType.PRIVATE:
         await message.answer(WELCOME_TEXT, parse_mode="HTML")
 
-# 2. ОБРАБОТЧИК ВСЕХ ОСТАЛЬНЫХ СООБЩЕНИЙ
+# 2. ОБРАБОТЧИК ВСЕХ СООБЩЕНИЙ
 @dp.message()
 async def handle_messages(message: types.Message):
     try:
@@ -45,27 +45,7 @@ async def handle_messages(message: types.Message):
             user = message.from_user
             username = f" (@{user.username})" if user.username else ""
 
-            # --- ПРОВЕРКА НА ПРЕМИУМ-ЭМОДЗИ И СТИКЕРЫ ---
-            has_premium_emoji = False
-
-            # Проверяем сущности в тексте или подписи к медиа
-            entities = message.entities or message.caption_entities or []
-            for entity in entities:
-                if entity.type == "custom_emoji":
-                    has_premium_emoji = True
-                    break
-
-            # Проверяем, не является ли само сообщение эмодзи-стикером или премиум-стикером
-            if message.sticker and (message.sticker.premium_animation or message.sticker.is_video):
-                has_premium_emoji = True
-
-            # Если обнаружен премиум-эмодзи / премиум-стикер
-            if has_premium_emoji:
-                await message.reply("Пожалуйста, не отправляйте премиум-эмодзи — бот их не обрабатывает.")
-                return
-
-            # --- ОБРАБОТКА ОБЫЧНЫХ СООБЩЕНИЙ ---
-            # 1. Формируем единое сообщение для текста
+            # 1. Текстовые сообщения отправляем ЕДИНЫМ постом
             if message.text:
                 full_post = (
                     f"📩 <b>Сообщение от пользователя:</b>\n"
@@ -76,16 +56,19 @@ async def handle_messages(message: types.Message):
                 )
                 await bot.send_message(chat_id=GROUP_ID, text=full_post[:4000], parse_mode="HTML")
 
-            # 2. Если прислали фото/видео/медиа с подписью или без
+            # 2. Медиа и стикеры
             else:
                 caption_text = message.caption or ""
-                full_caption = (
-                    f"📩 <b>Медиа от пользователя:</b> {html.escape(user.full_name)}{username}\n"
-                    f"<b>ID:</b> <code>{user.id}</code>\n"
-                    f"──────────\n\n"
-                    f"{html.escape(caption_text)}"
+                header_info = (
+                    f"📩 <b>Медиа/Стикер от пользователя:</b>\n"
+                    f"<b>Имя:</b> {html.escape(user.full_name)}{username}\n"
+                    f"<b>ID:</b> <code>{user.id}</code>"
                 )
-                await message.copy_to(chat_id=GROUP_ID, caption=full_caption[:1000], parse_mode="HTML")
+                if caption_text:
+                    header_info += f"\n──────────\n\n{html.escape(caption_text)}"
+
+                await bot.send_message(chat_id=GROUP_ID, text=header_info, parse_mode="HTML")
+                await message.copy_to(chat_id=GROUP_ID)
 
             # Подтверждение пользователю
             await message.reply("Спасибо! Ваше сообщение отправлено администраторам.")
@@ -116,17 +99,6 @@ async def handle_messages(message: types.Message):
 
     except Exception as e:
         logging.error(f"Error handling message: {e}")
-        try:
-            if message.from_user:
-                u = message.from_user
-                admin_error_alert = (
-                    f"❌ <b>Ошибка при обработке сообщения!</b>\n"
-                    f"<b>От:</b> {html.escape(u.full_name)} (ID: <code>{u.id}</code>)\n"
-                    f"<b>Ошибка:</b> <code>{html.escape(str(e))}</code>"
-                )
-                await bot.send_message(chat_id=GROUP_ID, text=admin_error_alert, parse_mode="HTML")
-        except Exception as alert_err:
-            logging.error(f"Failed to send error alert: {alert_err}")
 
 async def handle_ping(request):
     return web.Response(text="Bot is running!")
