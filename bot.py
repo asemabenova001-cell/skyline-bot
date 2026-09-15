@@ -50,14 +50,19 @@ async def handle_messages(message: types.Message):
                 await message.reply("Пожалуйста, не отправляйте стикеры — бот их не обрабатывает.")
                 return
 
-            # 2. БЛОКИРОВКА ПРЕМИУМ-ЭМОДЗИ В ТЕКСТЕ
+            # 2. БЛОКИРОВКА ГИФОК (АНИМАЦИЙ)
+            if message.animation:
+                await message.reply("Пожалуйста, не отправляйте гифки — бот их не обрабатывает.")
+                return
+
+            # 3. БЛОКИРОВКА ПРЕМИУМ-ЭМОДЗИ В ТЕКСТЕ/ПОДПИСЯХ
             entities = message.entities or message.caption_entities or []
             for entity in entities:
                 if entity.type == "custom_emoji" or getattr(entity, "custom_emoji_id", None):
                     await message.reply("Пожалуйста, не отправляйте премиум-эмодзи — бот их не обрабатывает.")
                     return
 
-            # 3. ОТПРАВКА ОБЫЧНОГО ТЕКСТА (одним блоком)
+            # 4. ОТПРАВКА ОБЫЧНОГО ТЕКСТА (одним блоком)
             if message.text:
                 full_post = (
                     f"📩 <b>Сообщение от пользователя:</b>\n"
@@ -68,7 +73,7 @@ async def handle_messages(message: types.Message):
                 )
                 await bot.send_message(chat_id=GROUP_ID, text=full_post[:4000], parse_mode="HTML")
 
-            # 4. ОТПРАВКА ОБЫЧНЫХ МЕДИА (фото, видео, гиф)
+            # 5. ОТПРАВКА ОБЫЧНЫХ МЕДИА (фото, видео и т.д.)
             else:
                 caption_text = message.caption or ""
                 header_info = (
@@ -82,7 +87,7 @@ async def handle_messages(message: types.Message):
                 await bot.send_message(chat_id=GROUP_ID, text=header_info, parse_mode="HTML")
                 await message.copy_to(chat_id=GROUP_ID)
 
-            # Ответ пользователю
+            # Подтверждение пользователю
             await message.reply("Спасибо! Ваше сообщение отправлено администраторам.")
 
         # Если админ отвечает в группе (через Reply)
@@ -111,6 +116,20 @@ async def handle_messages(message: types.Message):
 
     except Exception as e:
         logging.error(f"Error handling message: {e}")
+        # Отправка уведомления об ошибке администраторам
+        try:
+            if message and message.from_user:
+                u = message.from_user
+                username = f" (@{u.username})" if u.username else ""
+                admin_error_alert = (
+                    f"⚠️ <b>Не удалось переслать сообщение от пользователя из-за ошибки!</b>\n"
+                    f"<b>Имя:</b> {html.escape(u.full_name)}{username}\n"
+                    f"<b>ID:</b> <code>{u.id}</code>\n"
+                    f"<b>Ошибка:</b> <code>{html.escape(str(e))}</code>"
+                )
+                await bot.send_message(chat_id=GROUP_ID, text=admin_error_alert, parse_mode="HTML")
+        except Exception as alert_err:
+            logging.error(f"Failed to send error alert: {alert_err}")
 
 async def handle_ping(request):
     return web.Response(text="Bot is running!")
