@@ -45,18 +45,19 @@ async def handle_messages(message: types.Message):
             user = message.from_user
             username = f" (@{user.username})" if user.username else ""
             
-            # Заголовок с информацией о пользователе
+            # Шапка с информацией о пользователе
             header_info = (
                 f"📩 <b>Сообщение от пользователя:</b>\n"
-                f"<b>Имя:</b> {user.full_name}{username}\n"
+                f"<b>Имя:</b> {html.escape(user.full_name)}{username}\n"
                 f"<b>ID:</b> <code>{user.id}</code>\n"
                 f"──────────"
             )
 
-            # 1. Отправляем карточку пользователя в админ-группу
+            # 1. Отправляем шапку
             await bot.send_message(chat_id=GROUP_ID, text=header_info, parse_mode="HTML")
+            await asyncio.sleep(0.3)  # Защита от флуд-контроля Telegram
             
-            # 2. Копируем сообщение (сохраняет медиа, форматирование и премиум-эмодзи)
+            # 2. Копируем саму анкету/сообщение со всеми премиум-эмодзи
             await message.copy_to(chat_id=GROUP_ID)
 
             # 3. Отвечаем пользователю
@@ -79,28 +80,24 @@ async def handle_messages(message: types.Message):
                     await message.copy_to(chat_id=target_id)
                     await message.reply("✅ Ответ успешно отправлен!")
                 except Exception as send_err:
-                    # Уведомление об ошибке при ответе пользователю
                     error_msg = (
                         f"⚠️ <b>Ошибка при отправке ответа пользователю!</b>\n"
                         f"<b>ID пользователя:</b> <code>{target_id}</code>\n"
-                        f"<b>Текст ошибки:</b> <code>{html.escape(str(send_err))}</code>"
+                        f"<b>Ошибка:</b> <code>{html.escape(str(send_err))}</code>"
                     )
                     await message.reply(error_msg, parse_mode="HTML")
 
     except Exception as e:
         logging.error(f"Error handling message: {e}")
-        # Перехват глобальной ошибки при обработке входящей заявки
         try:
-            user_info = ""
             if message.from_user:
                 u = message.from_user
-                user_info = f"\n<b>От пользователя:</b> {u.full_name} (@{u.username or 'без_юзернейма'}), ID: <code>{u.id}</code>"
-
-            admin_error_alert = (
-                f"❌ <b>Произошла ошибка при обработке сообщения!</b>{user_info}\n\n"
-                f"<b>Детали ошибки:</b>\n<code>{html.escape(str(e))}</code>"
-            )
-            await bot.send_message(chat_id=GROUP_ID, text=admin_error_alert, parse_mode="HTML")
+                admin_error_alert = (
+                    f"❌ <b>Ошибка при обработке сообщения!</b>\n"
+                    f"<b>От:</b> {html.escape(u.full_name)} (ID: <code>{u.id}</code>)\n"
+                    f"<b>Ошибка:</b> <code>{html.escape(str(e))}</code>"
+                )
+                await bot.send_message(chat_id=GROUP_ID, text=admin_error_alert, parse_mode="HTML")
         except Exception as alert_err:
             logging.error(f"Failed to send error alert to group: {alert_err}")
 
