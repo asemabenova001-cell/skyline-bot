@@ -55,14 +55,24 @@ async def handle_messages(message: types.Message):
                 await message.reply("Пожалуйста, не отправляйте гифки — бот их не обрабатывает.")
                 return
 
-            # 3. БЛОКИРОВКА ПРЕМИУМ-ЭМОДЗИ В ТЕКСТЕ/ПОДПИСЯХ
+            # 3. БЛОКИРОВКА ИЗОБРАЖЕНИЙ (ФОТО)
+            if message.photo:
+                await message.reply("Пожалуйста, не отправляйте изображения — бот их не обрабатывает.")
+                return
+
+            # 4. БЛОКИРОВКА ВИДЕО И ВИДЕОСООБЩЕНИЙ (КРУЖОЧКОВ)
+            if message.video or message.video_note:
+                await message.reply("Пожалуйста, не отправляйте видео — бот их не обрабатывает.")
+                return
+
+            # 5. БЛОКИРОВКА ПРЕМИУМ-ЭМОДЗИ В ТЕКСТЕ
             entities = message.entities or message.caption_entities or []
             for entity in entities:
                 if entity.type == "custom_emoji" or getattr(entity, "custom_emoji_id", None):
                     await message.reply("Пожалуйста, не отправляйте премиум-эмодзи — бот их не обрабатывает.")
                     return
 
-            # 4. ОТПРАВКА ОБЫЧНОГО ТЕКСТА (одним блоком)
+            # 6. ОТПРАВКА ОБЫЧНОГО ТЕКСТА
             if message.text:
                 full_post = (
                     f"📩 <b>Сообщение от пользователя:</b>\n"
@@ -72,23 +82,7 @@ async def handle_messages(message: types.Message):
                     f"{html.escape(message.text)}"
                 )
                 await bot.send_message(chat_id=GROUP_ID, text=full_post[:4000], parse_mode="HTML")
-
-            # 5. ОТПРАВКА ОБЫЧНЫХ МЕДИА (фото, видео и т.д.)
-            else:
-                caption_text = message.caption or ""
-                header_info = (
-                    f"📩 <b>Медиа от пользователя:</b>\n"
-                    f"<b>Имя:</b> {html.escape(user.full_name)}{username}\n"
-                    f"<b>ID:</b> <code>{user.id}</code>"
-                )
-                if caption_text:
-                    header_info += f"\n──────────\n\n{html.escape(caption_text)}"
-
-                await bot.send_message(chat_id=GROUP_ID, text=header_info, parse_mode="HTML")
-                await message.copy_to(chat_id=GROUP_ID)
-
-            # Подтверждение пользователю
-            await message.reply("Спасибо! Ваше сообщение отправлено администраторам.")
+                await message.reply("Спасибо! Ваше сообщение отправлено администраторам.")
 
         # Если админ отвечает в группе (через Reply)
         elif message.chat.id == GROUP_ID and message.reply_to_message:
