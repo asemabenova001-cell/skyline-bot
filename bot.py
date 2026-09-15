@@ -40,27 +40,54 @@ async def handle_messages(message: types.Message):
         if message.text and message.text.strip().startswith("/start"):
             return
 
-        # Если это личное сообщение боту
+        # Если сообщение пришло в ЛС боту
         if message.chat.type == ChatType.PRIVATE:
             user = message.from_user
             username = f" (@{user.username})" if user.username else ""
-            
-            # Шапка с информацией о пользователе
-            header_info = (
-                f"📩 <b>Сообщение от пользователя:</b>\n"
-                f"<b>Имя:</b> {html.escape(user.full_name)}{username}\n"
-                f"<b>ID:</b> <code>{user.id}</code>\n"
-                f"──────────"
-            )
 
-            # 1. Отправляем шапку
-            await bot.send_message(chat_id=GROUP_ID, text=header_info, parse_mode="HTML")
-            await asyncio.sleep(0.3)  # Защита от флуд-контроля Telegram
-            
-            # 2. Копируем саму анкету/сообщение со всеми премиум-эмодзи
-            await message.copy_to(chat_id=GROUP_ID)
+            # --- ПРОВЕРКА НА ПРЕМИУМ-ЭМОДЗИ И СТИКЕРЫ ---
+            has_premium_emoji = False
 
-            # 3. Отвечаем пользователю
+            # Проверяем сущности в тексте или подписи к медиа
+            entities = message.entities or message.caption_entities or []
+            for entity in entities:
+                if entity.type == "custom_emoji":
+                    has_premium_emoji = True
+                    break
+
+            # Проверяем, не является ли само сообщение эмодзи-стикером или премиум-стикером
+            if message.sticker and (message.sticker.premium_animation or message.sticker.is_video):
+                has_premium_emoji = True
+
+            # Если обнаружен премиум-эмодзи / премиум-стикер
+            if has_premium_emoji:
+                await message.reply("Пожалуйста, не отправляйте премиум-эмодзи — бот их не обрабатывает.")
+                return
+
+            # --- ОБРАБОТКА ОБЫЧНЫХ СООБЩЕНИЙ ---
+            # 1. Формируем единое сообщение для текста
+            if message.text:
+                full_post = (
+                    f"📩 <b>Сообщение от пользователя:</b>\n"
+                    f"<b>Имя:</b> {html.escape(user.full_name)}{username}\n"
+                    f"<b>ID:</b> <code>{user.id}</code>\n"
+                    f"──────────\n\n"
+                    f"{html.escape(message.text)}"
+                )
+                await bot.send_message(chat_id=GROUP_ID, text=full_post[:4000], parse_mode="HTML")
+
+            # 2. Если прислали фото/видео/медиа с подписью или без
+            else:
+                caption_text = message.caption or ""
+                full_caption = (
+                    f"📩 <b>Медиа от пользователя:</b> {html.escape(user.full_name)}{username}\n"
+                    f"<b>ID:</b> <code>{user.id}</code>\n"
+                    f"──────────\n\n"
+                    f"{html.escape(caption_text)}"
+                )
+                await message.copy_to(chat_id=GROUP_ID, caption=full_caption[:1000], parse_mode="HTML")
+
+            # Подтверждение пользователю
             await message.reply("Спасибо! Ваше сообщение отправлено администраторам.")
 
         # Если админ отвечает в группе (через Reply)
@@ -82,7 +109,7 @@ async def handle_messages(message: types.Message):
                 except Exception as send_err:
                     error_msg = (
                         f"⚠️ <b>Ошибка при отправке ответа пользователю!</b>\n"
-                        f"<b>ID пользователя:</b> <code>{target_id}</code>\n"
+                        f"<b>ID:</b> <code>{target_id}</code>\n"
                         f"<b>Ошибка:</b> <code>{html.escape(str(send_err))}</code>"
                     )
                     await message.reply(error_msg, parse_mode="HTML")
@@ -99,7 +126,7 @@ async def handle_messages(message: types.Message):
                 )
                 await bot.send_message(chat_id=GROUP_ID, text=admin_error_alert, parse_mode="HTML")
         except Exception as alert_err:
-            logging.error(f"Failed to send error alert to group: {alert_err}")
+            logging.error(f"Failed to send error alert: {alert_err}")
 
 async def handle_ping(request):
     return web.Response(text="Bot is running!")
