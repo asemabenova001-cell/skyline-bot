@@ -14,15 +14,19 @@ if not TOKEN:
 
 GROUP_ID = -1004394157854
 
+bot = Bot(token=TOKEN)
+dp = Dispatcher()
+
 # Словарь соответствия Telegram ID администратора и имени его персонажа
 ADMIN_PERSONAS = {
     1379515741: "Хелкарт",
     5825165518: "Ханаби",
-    # Сюда можно будет легко добавить новых администраторов позже
+    1389728660: "Селена",
+    691127916: "Берелик",
+    1324681606: "Кагура",
+    7316096923: "Баданг",
+    1406965637: "Ксавьер",
 }
-
-bot = Bot(token=TOKEN)
-dp = Dispatcher()
 
 WELCOME_TEXT = (
     "Чтобы вступить во флуд, заполните анкету.\n"
@@ -48,6 +52,7 @@ async def handle_messages(message: types.Message):
         # Если сообщение пришло в ЛС боту
         if message.chat.type == ChatType.PRIVATE:
             user = message.from_user
+            username = f" (@{user.username})" if user.username else ""
 
             # 1. БЛОКИРОВКА НЕДОПУСТИМЫХ ТИПОВ КОНТЕНТА
             if message.sticker:
@@ -86,7 +91,7 @@ async def handle_messages(message: types.Message):
                     f"{html.escape(message.text)}"
                 )
                 await bot.send_message(chat_id=GROUP_ID, text=full_post[:4000], parse_mode="HTML")
-                await message.reply("Ожидайте ответа! ｡𖦹°‧")
+                await message.reply("Ваше сообщение отправлено администраторам, ожидайте ответа! ｡𖦹°‧")
 
         # Если админ отвечает в группе (через Reply)
         elif message.chat.id == GROUP_ID and message.reply_to_message:
@@ -112,7 +117,7 @@ async def handle_messages(message: types.Message):
                             f"{html.escape(message.text)}"
                         )
                         await bot.send_message(chat_id=target_id, text=formatted_response, parse_mode="HTML")
-                        await message.reply("݁ ˖Ი𐑼⋆ успех!~")
+                        await message.reply("Успешно отправлено!")
 
                     # Если админ отправил фото с подписью
                     elif message.photo:
@@ -123,7 +128,7 @@ async def handle_messages(message: types.Message):
                             f"{html.escape(caption_text)}"
                         )
                         await bot.send_photo(chat_id=target_id, photo=photo_file_id, caption=formatted_caption, parse_mode="HTML")
-                        await message.reply("݁ ˖Ი𐑼⋆ успех!~")
+                        await message.reply("Успешно отправлено!")
 
                 except Exception as send_err:
                     error_msg = (
