@@ -14,16 +14,24 @@ if not TOKEN:
 
 GROUP_ID = -1004394157854
 
+# Словарь соответствия Telegram ID администратора и имени его персонажа
+ADMIN_PERSONAS = {
+    1379515741: "Хелкарт",
+    5825165518: "Ханаби",
+    # Сюда можно будет легко добавить новых администраторов позже
+}
+
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 WELCOME_TEXT = (
-    "      Чтобы вступить во флуд, заполните анкету и подпишитесь на каналы.\n"
-    "Анкету можете найти в Инфо ➟ навигация ➟ вступление.\n"
-    "Анкету отправляете боту.\n"
-    "    ──────────\n"
-    "        нᴀɯи ᴋᴀнᴀᴧы\n\n"
-    "@SkylineAzure_INFO - инɸо ᴋᴀнᴀᴧ ɸᴧудᴀ\n\n"
+    "Чтобы вступить во флуд, заполните анкету.\n"
+    "Анкету можете найти в Инфо\n"
+    "Инфо ➟ навигация ➟ вступление.\n\n"
+    "             ────୨ৎ────\n\n"
+    "              нᴀɯи ᴋᴀнᴀᴧы\n"
+    "Подписка на каналы обязательна!\n"
+    "@SkylineAzure_INFO - инɸо ᴋᴀнᴀᴧ ɸᴧудᴀ\n"
     "@SkylineAzure_LIFE - ᴧᴀйɸ ᴋᴀнᴀᴧ ɸᴧудᴀ"
 )
 
@@ -37,52 +45,48 @@ async def start_cmd(message: types.Message):
 @dp.message()
 async def handle_messages(message: types.Message):
     try:
-        if message.text and message.text.strip().startswith("/start"):
-            return
-
         # Если сообщение пришло в ЛС боту
         if message.chat.type == ChatType.PRIVATE:
             user = message.from_user
-            username = f" (@{user.username})" if user.username else ""
 
-            # 1. БЛОКИРОВКА СТИКЕРОВ
+            # 1. БЛОКИРОВКА НЕДОПУСТИМЫХ ТИПОВ КОНТЕНТА
             if message.sticker:
                 await message.reply("Пожалуйста, не отправляйте стикеры — бот их не обрабатывает.")
                 return
-
-            # 2. БЛОКИРОВКА ГИФОК (АНИМАЦИЙ)
             if message.animation:
                 await message.reply("Пожалуйста, не отправляйте гифки — бот их не обрабатывает.")
                 return
-
-            # 3. БЛОКИРОВКА ИЗОБРАЖЕНИЙ (ФОТО)
             if message.photo:
                 await message.reply("Пожалуйста, не отправляйте изображения — бот их не обрабатывает.")
                 return
-
-            # 4. БЛОКИРОВКА ВИДЕО И ВИДЕОСООБЩЕНИЙ (КРУЖОЧКОВ)
             if message.video or message.video_note:
                 await message.reply("Пожалуйста, не отправляйте видео — бот их не обрабатывает.")
                 return
+            if message.document or message.voice or message.audio:
+                await message.reply("Пожалуйста, отправляйте только текстовые сообщения.")
+                return
 
-            # 5. БЛОКИРОВКА ПРЕМИУМ-ЭМОДЗИ В ТЕКСТЕ
+            # 2. БЛОКИРОВКА ПРЕМИУМ-ЭМОДЗИ В ТЕКСТЕ
             entities = message.entities or message.caption_entities or []
             for entity in entities:
                 if entity.type == "custom_emoji" or getattr(entity, "custom_emoji_id", None):
                     await message.reply("Пожалуйста, не отправляйте премиум-эмодзи — бот их не обрабатывает.")
                     return
 
-            # 6. ОТПРАВКА ОБЫЧНОГО ТЕКСТА
+            # 3. ОТПРАВКА ОБЫЧНОГО ТЕКСТА
             if message.text:
+                username_line = f"<b>Юзер:</b> @{user.username}\n" if user.username else ""
+                
                 full_post = (
-                    f"📩 <b>Сообщение от пользователя:</b>\n"
-                    f"<b>Имя:</b> {html.escape(user.full_name)}{username}\n"
+                    f"𑣲 <b>Пришло новое сообщение:</b>\n"
+                    f"<b>Имя:</b> {html.escape(user.full_name)}\n"
+                    f"{username_line}"
                     f"<b>ID:</b> <code>{user.id}</code>\n"
-                    f"──────────\n\n"
+                    f"────୨ৎ────\n\n"
                     f"{html.escape(message.text)}"
                 )
                 await bot.send_message(chat_id=GROUP_ID, text=full_post[:4000], parse_mode="HTML")
-                await message.reply("Спасибо! Ваше сообщение отправлено администраторам.")
+                await message.reply("Ожидайте ответа! ｡𖦹°‧")
 
         # Если админ отвечает в группе (через Reply)
         elif message.chat.id == GROUP_ID and message.reply_to_message:
@@ -98,8 +102,29 @@ async def handle_messages(message: types.Message):
 
             if target_id:
                 try:
-                    await message.copy_to(chat_id=target_id)
-                    await message.reply("✅ Ответ успешно отправлен!")
+                    admin_id = message.from_user.id
+                    persona_name = ADMIN_PERSONAS.get(admin_id, "Администратор")
+
+                    # Если админ написал текст
+                    if message.text:
+                        formatted_response = (
+                            f"💬 <b>Ответ от {persona_name}:</b>\n\n"
+                            f"{html.escape(message.text)}"
+                        )
+                        await bot.send_message(chat_id=target_id, text=formatted_response, parse_mode="HTML")
+                        await message.reply("݁ ˖Ი𐑼⋆ успех!~")
+
+                    # Если админ отправил фото с подписью
+                    elif message.photo:
+                        photo_file_id = message.photo[-1].file_id
+                        caption_text = message.caption or ""
+                        formatted_caption = (
+                            f"💬 <b>Ответ от {persona_name}:</b>\n\n"
+                            f"{html.escape(caption_text)}"
+                        )
+                        await bot.send_photo(chat_id=target_id, photo=photo_file_id, caption=formatted_caption, parse_mode="HTML")
+                        await message.reply("݁ ˖Ი𐑼⋆ успех!~")
+
                 except Exception as send_err:
                     error_msg = (
                         f"⚠️ <b>Ошибка при отправке ответа пользователю!</b>\n"
@@ -110,7 +135,6 @@ async def handle_messages(message: types.Message):
 
     except Exception as e:
         logging.error(f"Error handling message: {e}")
-        # Отправка уведомления об ошибке администраторам
         try:
             if message and message.from_user:
                 u = message.from_user
