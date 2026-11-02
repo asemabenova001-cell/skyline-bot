@@ -83,7 +83,7 @@ async def handle_messages(message: types.Message):
                 username_line = f"<b>Юзер:</b> @{user.username}\n" if user.username else ""
                 
                 full_post = (
-                    f"𑣲 <b>Пришло новое сообщение:</b>\n"
+                    f"💌 <b>Пришло новое сообщение:</b>\n"
                     f"<b>Имя:</b> {html.escape(user.full_name)}\n"
                     f"{username_line}"
                     f"<b>ID:</b> <code>{user.id}</code>\n"
@@ -113,7 +113,7 @@ async def handle_messages(message: types.Message):
                     # Если админ написал текст
                     if message.text:
                         formatted_response = (
-                            f"💬 <b>Ответ от {persona_name}:</b>\n\n"
+                            f"<b>Ответ от {persona_name}:</b>\n\n"
                             f"{html.escape(message.text)}"
                         )
                         await bot.send_message(chat_id=target_id, text=formatted_response, parse_mode="HTML")
@@ -124,7 +124,7 @@ async def handle_messages(message: types.Message):
                         photo_file_id = message.photo[-1].file_id
                         caption_text = message.caption or ""
                         formatted_caption = (
-                            f"💬 <b>Ответ от {persona_name}:</b>\n\n"
+                            f"<b>Ответ от {persona_name}:</b>\n\n"
                             f"{html.escape(caption_text)}"
                         )
                         await bot.send_photo(chat_id=target_id, photo=photo_file_id, caption=formatted_caption, parse_mode="HTML")
