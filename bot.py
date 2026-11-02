@@ -109,6 +109,9 @@ async def handle_messages(message: types.Message):
                 try:
                     admin_id = message.from_user.id
                     persona_name = ADMIN_PERSONAS.get(admin_id, "Администратор")
+                    
+                    # Персональный ответ для Ханаби (вашего ID), для остальных — стандартный
+                    success_reply = "݁ ˖Ი𐑼⋆ успех!~" if admin_id == 5825165518 else "Успешно отправлено!"
 
                     # Если админ написал текст
                     if message.text:
@@ -117,7 +120,7 @@ async def handle_messages(message: types.Message):
                             f"{html.escape(message.text)}"
                         )
                         await bot.send_message(chat_id=target_id, text=formatted_response, parse_mode="HTML")
-                        await message.reply("Успешно отправлено!")
+                        await message.reply(success_reply)
 
                     # Если админ отправил фото с подписью
                     elif message.photo:
@@ -128,7 +131,7 @@ async def handle_messages(message: types.Message):
                             f"{html.escape(caption_text)}"
                         )
                         await bot.send_photo(chat_id=target_id, photo=photo_file_id, caption=formatted_caption, parse_mode="HTML")
-                        await message.reply("Успешно отправлено!")
+                        await message.reply(success_reply)
 
                 except Exception as send_err:
                     error_msg = (
