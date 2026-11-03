@@ -6,6 +6,7 @@ from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.enums import ChatType
 from aiogram.filters import Command
+from aiogram.exceptions import TelegramAPIError
 
 TOKEN = os.getenv("BOT_TOKEN")
 
@@ -13,6 +14,10 @@ if not TOKEN:
     raise ValueError("Ошибка: Переменная BOT_TOKEN не найдена в Environment Variables!")
 
 GROUP_ID = -1004394157854
+
+# ID каналов для проверки подписки
+CHANNEL_LIFE = -1003826940991
+CHANNEL_INFO = -1004374326423
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -38,6 +43,17 @@ WELCOME_TEXT = (
     "@SkylineAzure_INFO - инɸо ᴋᴀнᴀᴧ ɸᴧудᴀ\n"
     "@SkylineAzure_LIFE - ᴧᴀйɸ ᴋᴀнᴀᴧ ɸᴧудᴀ"
 )
+
+# Функция проверки подписки на канал
+async def check_subscription(user_id: int, channel_id: int) -> bool:
+    try:
+        member = await bot.get_chat_member(chat_id=channel_id, user_id=user_id)
+        # Пользователь считается подписанным, если его статус не creator, administrator, member или restricted (не left/kicked)
+        if member.status in ["creator", "administrator", "member", "restricted"]:
+            return True
+    except TelegramAPIError:
+        pass
+    return False
 
 # 1. ОБРАБОТЧИК /start
 @dp.message(Command("start"))
@@ -82,11 +98,20 @@ async def handle_messages(message: types.Message):
             if message.text:
                 username_line = f"<b>Юзер:</b> @{user.username}\n" if user.username else ""
                 
+                # Проверяем подписку на оба канала
+                is_sub_life = await check_subscription(user.id, CHANNEL_LIFE)
+                is_sub_info = await check_subscription(user.id, CHANNEL_INFO)
+                
+                life_status = "✅ Подписан" if is_sub_life else "❌ Не подписан"
+                info_status = "✅ Подписан" if is_sub_info else "❌ Не подписан"
+
                 full_post = (
                     f"💌 <b>Пришло новое сообщение:</b>\n"
                     f"<b>Имя:</b> {html.escape(user.full_name)}\n"
                     f"{username_line}"
                     f"<b>ID:</b> <code>{user.id}</code>\n"
+                    f"<b>Канал Лайф:</b> {life_status}\n"
+                    f"<b>Канал Инфо:</b> {info_status}\n"
                     f"────୨ৎ────\n\n"
                     f"{html.escape(message.text)}"
                 )
